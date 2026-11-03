@@ -8,7 +8,7 @@ sources_mtime:
   docs/decisions/technical-decisions-next-frontend-openapi-typing.md: "2026-05-13T19:51:13-03:00"
   docs/decisions/technical-decisions-next-frontend-config-base.md: "2026-05-13T15:23:15-03:00"
   docs/phases/phase-02-auth/context.md: "2026-05-12T14:01:10-03:00"
-  .claude/skills/testing-guide-next-frontend/SKILL.md: "2026-05-13T10:59:26-03:00"
+  .github/skills/testing-guide-next-frontend/SKILL.md: "2026-05-13T10:59:26-03:00"
 ---
 
 # next-frontend MSW Foundation
@@ -88,13 +88,13 @@ MSW (Mock Service Worker) foundation for next-frontend: handler module organizat
 
 ---
 
-### SI-4 — Atualizar `.claude/rules/next-frontend-msw-mocks.md` para refletir a estrutura decidida
+### SI-4 — Atualizar `.github/instructions/next-frontend-msw-mocks.instructions.md` para refletir a estrutura decidida
 
-**Description:** A regra atual (`.claude/rules/next-frontend-msw-mocks.md`) mostra `mocks/handlers.ts` como arquivo único (exemplo herdado do contrato pré-decision). Atualizar para refletir o que esta task materializou: a árvore per-domain `mocks/handlers/<domain>.ts` + barrel (TD-01), o diretório `mocks/factories/` com a convenção `buildX(overrides)` (TD-03), e a lifecycle `listen({ onUnhandledRequest: "error" }) + resetHandlers + close` (TD-04). A exceção "`mocks/` pode importar `paths` direto" permanece — ela já era travada por `next-frontend-openapi-typing/TD-05`.
+**Description:** A regra atual (`.github/instructions/next-frontend-msw-mocks.instructions.md`) mostra `mocks/handlers.ts` como arquivo único (exemplo herdado do contrato pré-decision). Atualizar para refletir o que esta task materializou: a árvore per-domain `mocks/handlers/<domain>.ts` + barrel (TD-01), o diretório `mocks/factories/` com a convenção `buildX(overrides)` (TD-03), e a lifecycle `listen({ onUnhandledRequest: "error" }) + resetHandlers + close` (TD-04). A exceção "`mocks/` pode importar `paths` direto" permanece — ela já era travada por `next-frontend-openapi-typing/TD-05`.
 
 **Technical actions:**
 
-1. Editar `.claude/rules/next-frontend-msw-mocks.md` § "Where MSW lives": substituir a referência única a `mocks/handlers.ts` por uma listagem que inclua `mocks/handlers/<domain>.ts`, `mocks/handlers/index.ts` (barrel), `mocks/factories/<domain>.ts`, `mocks/server.ts`, `mocks/setup.ts` — com one-liner explicando o papel de cada (per `next-frontend-msw-foundation/TD-01` e `TD-02`).
+1. Editar `.github/instructions/next-frontend-msw-mocks.instructions.md` § "Where MSW lives": substituir a referência única a `mocks/handlers.ts` por uma listagem que inclua `mocks/handlers/<domain>.ts`, `mocks/handlers/index.ts` (barrel), `mocks/factories/<domain>.ts`, `mocks/server.ts`, `mocks/setup.ts` — com one-liner explicando o papel de cada (per `next-frontend-msw-foundation/TD-01` e `TD-02`).
 2. Adicionar nova subseção "Lifecycle (Vitest `setupFiles`)" documentando o ciclo `listen({ onUnhandledRequest: "error" }) → resetHandlers (afterEach) → close (afterAll)`, com snippet curto e o motivo de `onUnhandledRequest: "error"` (per `next-frontend-msw-foundation/TD-04`).
 3. Adicionar nova subseção "Factories convention" descrevendo `mocks/factories/<domain>.ts` exportando `buildX(overrides?: Partial<X>): X` com defaults hand-written, e a regra de `@faker-js/faker` opt-in apenas para `buildXList` com `faker.seed(N)` local antes da geração (per `next-frontend-msw-foundation/TD-03`).
 4. Atualizar o exemplo de código que mostra um handler — trocar `next-frontend/mocks/handlers.ts` por `next-frontend/mocks/handlers/auth.ts`, preservando byte-verbatim o restante (a tipagem via `paths["/videos/{id}"]["get"]["responses"][200]["content"]["application/json"]` e a composição com `${env.API_URL}/...`).
@@ -105,7 +105,7 @@ MSW (Mock Service Worker) foundation for next-frontend: handler module organizat
 
 **Acceptance criteria:**
 
-- `.claude/rules/next-frontend-msw-mocks.md` cita `mocks/handlers/<domain>.ts` e `mocks/handlers/index.ts` explicitamente; a string isolada `mocks/handlers.ts` foi removida ou trocada onde representava o arquivo único antigo.
+- `.github/instructions/next-frontend-msw-mocks.instructions.md` cita `mocks/handlers/<domain>.ts` e `mocks/handlers/index.ts` explicitamente; a string isolada `mocks/handlers.ts` foi removida ou trocada onde representava o arquivo único antigo.
 - A regra contém as subseções "Lifecycle (Vitest setupFiles)" e "Factories convention" com referências verbatim a `next-frontend-msw-foundation/TD-04` e `TD-03` respectivamente.
 - O exemplo de handler na regra usa `next-frontend/mocks/handlers/auth.ts` (não `mocks/handlers.ts`); a tipagem `paths[...]` e a URL `${env.API_URL}/...` foram preservadas verbatim.
 - O bloco "Exception to the contracts-barrel rule" continua presente sem alteração (já estava correto pré-decision).
@@ -306,7 +306,7 @@ Strict linear chain — each SI builds on the previous. No parallel roots.
 - [ ] SI-1 — Instalar MSW + Vitest e dependências de teste
 - [ ] SI-2 — Criar a árvore `mocks/handlers/` + barrel + seed + diretório `mocks/factories/`
 - [ ] SI-3 — Wire MSW na lifecycle do Vitest (`mocks/server.ts` + `mocks/setup.ts` + `vitest.config.ts`)
-- [ ] SI-4 — Atualizar `.claude/rules/next-frontend-msw-mocks.md` para refletir a estrutura decidida
+- [ ] SI-4 — Atualizar `.github/instructions/next-frontend-msw-mocks.instructions.md` para refletir a estrutura decidida
 - [ ] SI-5 — Atualizar `next-frontend/CLAUDE.md § Testing → Status` para refletir bootstrap concluído
 
 **Full test suites:**

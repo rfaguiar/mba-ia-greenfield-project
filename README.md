@@ -37,6 +37,25 @@ Contém os fundamentos visuais do StreamTube — tokens (cores, tipografia, espa
 - Node.js v25+ (para rodar os testes E2E do Playwright no host)
 - npm
 
+## 🤖 Claude Code e GitHub Copilot
+
+O projeto mantém suporte aos dois clientes de IA, com configurações próprias que coexistem no repositório:
+
+- **Claude Code:** `CLAUDE.md`, `nestjs-project/CLAUDE.md` e `.claude/` (skills, agentes, regras e configurações).
+- **GitHub Copilot no VS Code:** `.github/copilot-instructions.md`, `nestjs-project/AGENTS.md`, `.github/instructions/`, `.github/skills/` e `.github/agents/`.
+- **Ambos:** `.mcp.json` configura os servidores PostgreSQL, Context7 e Figma.
+
+Para habilitar o MCP PostgreSQL, defina a URL usando a porta publicada pelo Compose no ambiente que inicia Claude Code ou VS Code. O valor fica no ambiente local e não deve ser salvo no repositório:
+
+```powershell
+$env:STREAMTUBE_POSTGRES_URL = "postgresql://<usuario>:<senha>@localhost:5432/streamtube"
+code .
+```
+
+Substitua os placeholders pelas credenciais locais do PostgreSQL. A conexão do servidor MCP foi validada com uma consulta somente leitura (`SELECT 1`).
+
+O Context7 usa o endpoint HTTP oficial. O servidor Figma está disponível quando o serviço local do Figma estiver ativo em `127.0.0.1:3845`.
+
 ## 🏗️ Arquitetura
 
 O projeto é um monorepo baseado em containers Docker. Cada subprojeto sobe sua própria stack via `docker compose`.
@@ -183,7 +202,13 @@ green-field-ia-project/
 │   ├── tests/                           # E2E (Playwright)
 │   ├── compose.yaml                     # Docker Compose (dev server)
 │   └── Dockerfile.dev
-├── CLAUDE.md                            # Instruções para IA
+├── .github/
+│   ├── copilot-instructions.md          # Instruções gerais do Copilot
+│   ├── instructions/                    # Regras condicionais por arquivos
+│   ├── agents/                          # Agentes especialistas
+│   └── skills/                          # Skills e recursos do workflow
+├── .mcp.json                            # Servidores MCP para o Copilot
+├── nestjs-project/AGENTS.md             # Instruções específicas do backend
 ├── FC Tube.fig                          # Design system do projeto (Figma)
 ├── whiteboard.png                       # Quadro branco do projeto
 └── README.md
