@@ -149,6 +149,20 @@ NestJS with standard module structure. Source lives in `src/`, compiled output i
 - Each domain feature gets its own module (e.g., `UsersModule`, `VideosModule`) registered in `AppModule`
 - Controllers handle HTTP routing; Services hold business logic; both are scoped to their module
 
+### Videos and processing worker
+
+- Video uploads use S3-compatible multipart storage; issue presigned part URLs rather than proxying large file bodies through the API.
+- Derive object keys from internal channel/video identifiers, never from the original filename.
+- Keep status transitions conditional and centralized in `VideoLifecycleService`; workers must be safe to retry.
+- The API publishes to RabbitMQ only after the upload is verified and the video transitions to `processing`.
+- Keep exchange, routing-key, queue, retry, and DLQ declarations in `src/queue/video-processing.topology.ts`; quorum queue arguments are immutable once declared.
+- The standalone worker entry point is `src/worker/main.ts`; it shares persistence, storage, and queue configuration with the API.
+- The pinned MinIO server does not implement bucket CORS configuration; `minio-cors-proxy` supplies browser CORS headers and must preserve the incoming Host header for presigned SigV4 requests.
+- The worker sweeper expires stale drafts, republishes unclaimed jobs, and recovers expired processing leases.
+- A video and its media URLs are public only when its lifecycle status is `ready`.
+- Use `VIDEO_PROCESSING_QUEUE` overrides in E2E tests; integration tests use real Postgres, MinIO, and FFmpeg where the test exercises those boundaries.
+- Keep media failure codes stable and user-safe; never expose FFmpeg stderr or raw ffprobe metadata.
+
 ## Code Conventions
 
 - **TypeScript:** `nodenext` module resolution, `ES2023` target, `strictNullChecks` on, `noImplicitAny` off

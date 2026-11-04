@@ -8,7 +8,7 @@ import {
 import { Channel } from '../../channels/entities/channel.entity';
 import { User } from './user.entity';
 
-const ALL_ENTITIES = [User, Channel, RefreshToken, VerificationToken];
+import { ALL_ENTITIES } from '../../test/all-entities';
 
 describe('User entity (integration)', () => {
   let dataSource: DataSource;

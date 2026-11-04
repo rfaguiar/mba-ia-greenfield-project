@@ -272,6 +272,7 @@ describe('Auth (e2e)', () => {
 
       expect(res.body.sub).toBeDefined();
       expect(res.body.email).toBe('me@example.com');
+      expect(res.body.channel_id).toBeDefined();
     });
 
     it('GET / is accessible without any Authorization header (@Public)', async () => {

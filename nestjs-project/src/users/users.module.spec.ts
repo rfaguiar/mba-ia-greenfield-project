@@ -7,7 +7,7 @@ import { Channel } from '../channels/entities/channel.entity';
 import { User } from './entities/user.entity';
 import { UsersModule } from './users.module';
 
-const ALL_ENTITIES = [User, Channel, RefreshToken, VerificationToken];
+import { ALL_ENTITIES } from '../test/all-entities';
 
 describe('UsersModule', () => {
   it('should compile successfully', async () => {

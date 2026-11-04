@@ -1,6 +1,28 @@
 import { readFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
+
+jest.mock('@golevelup/nestjs-rabbitmq', () => {
+  class MockRabbitModule {}
+  return {
+    MessageHandlerErrorBehavior: { NACK: 'nack' },
+    Nack: class Nack {
+      constructor(public readonly requeue: boolean) {}
+    },
+    RabbitMQModule: Object.assign(MockRabbitModule, {
+      forRootAsync: () => ({ module: MockRabbitModule }),
+    }),
+    RabbitSubscribe: () => () => undefined,
+  };
+});
+
+jest.mock('./queue/rabbitmq-video-processing.queue', () => ({
+  RabbitMqVideoProcessingQueue: class {
+    requestProcessing = jest.fn().mockResolvedValue(undefined);
+    scheduleRetry = jest.fn().mockResolvedValue(undefined);
+  },
+}));
+
 import { exportSpec } from './openapi-export';
 
 describe('exportSpec (integration)', () => {
@@ -108,6 +130,46 @@ describe('exportSpec (integration)', () => {
       expect(security).toBeDefined();
       expect(security.some((req) => 'access-token' in req)).toBe(true);
     }
+  });
+
+  it('exports every phase 03 video endpoint with the right security boundary', () => {
+    const paths = document.paths as Record<
+      string,
+      Record<string, Record<string, unknown>>
+    >;
+    const ownerPaths = [
+      ['/channels/{channelId}/videos', 'post'],
+      ['/channels/{channelId}/videos/{videoId}/uploads/parts', 'get'],
+      ['/channels/{channelId}/videos/{videoId}/uploads/complete', 'post'],
+      ['/channels/{channelId}/videos/{videoId}/uploads/abort', 'post'],
+      ['/channels/{channelId}/videos/{videoId}', 'get'],
+    ] as const;
+    const publicPaths = [
+      ['/videos/{id}', 'get'],
+      ['/videos/{id}/stream', 'get'],
+      ['/videos/{id}/download', 'get'],
+      ['/videos/{id}/thumbnail', 'get'],
+    ] as const;
+
+    for (const [path, method] of ownerPaths) {
+      const operation = paths[path]?.[method];
+      expect(operation).toBeDefined();
+      expect(operation?.security).toEqual([{ 'access-token': [] }]);
+    }
+
+    for (const [path, method] of publicPaths) {
+      const operation = paths[path]?.[method];
+      expect(operation).toBeDefined();
+      expect(operation).not.toHaveProperty('security');
+    }
+
+    expect(
+      Object.values(paths).some((methods) =>
+        Object.values(methods).some((operation) =>
+          (operation.tags as string[] | undefined)?.includes('videos'),
+        ),
+      ),
+    ).toBe(true);
   });
 
   it('all auth endpoints have a non-empty summary', () => {

@@ -32,7 +32,7 @@ import {
   VerificationTokenType,
 } from './entities/verification-token.entity';
 
-const ALL_ENTITIES = [User, Channel, RefreshToken, VerificationToken];
+import { ALL_ENTITIES } from '../test/all-entities';
 
 async function createAuthTestModule(): Promise<TestingModule> {
   const ds = createTestDataSource(ALL_ENTITIES);
@@ -102,7 +102,7 @@ describe('AuthService — register (integration)', () => {
     dataSource = module.get(DataSource);
     verificationTokenRepository = dataSource.getRepository(VerificationToken);
     userRepository = dataSource.getRepository(User);
-  });
+  }, 30000);
 
   afterAll(async () => {
     await dataSource.destroy();

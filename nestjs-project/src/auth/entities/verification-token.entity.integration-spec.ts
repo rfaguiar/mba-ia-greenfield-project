@@ -11,7 +11,7 @@ import {
   VerificationTokenType,
 } from './verification-token.entity';
 
-const ALL_ENTITIES = [User, Channel, RefreshToken, VerificationToken];
+import { ALL_ENTITIES } from '../../test/all-entities';
 
 describe('VerificationToken entity (integration)', () => {
   let dataSource: DataSource;

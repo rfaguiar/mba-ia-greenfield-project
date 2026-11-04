@@ -11,7 +11,7 @@ import { User } from './entities/user.entity';
 import { UsersService } from './users.service';
 import { TestingModule } from '@nestjs/testing';
 
-const ALL_ENTITIES = [User, Channel, RefreshToken, VerificationToken];
+import { ALL_ENTITIES } from '../test/all-entities';
 
 describe('UsersService (integration)', () => {
   let dataSource: DataSource;

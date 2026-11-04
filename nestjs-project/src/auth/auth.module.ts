@@ -13,10 +13,12 @@ import { AuthService } from './auth.service';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
 import { RefreshToken } from './entities/refresh-token.entity';
 import { VerificationToken } from './entities/verification-token.entity';
+import { ChannelsModule } from '../channels/channels.module';
 
 @Module({
   imports: [
     UsersModule,
+    ChannelsModule,
     MailModule,
     JwtModule.registerAsync({
       inject: [authConfig.KEY],

@@ -8,7 +8,7 @@ import {
 import { RefreshToken } from './refresh-token.entity';
 import { VerificationToken } from './verification-token.entity';
 
-const ALL_ENTITIES = [User, Channel, RefreshToken, VerificationToken];
+import { ALL_ENTITIES } from '../../test/all-entities';
 
 describe('RefreshToken entity (integration)', () => {
   let dataSource: DataSource;

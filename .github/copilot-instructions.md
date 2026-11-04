@@ -25,8 +25,23 @@ See `docs/diagrams/software-arch.mermaid` for the full diagram. Key containers:
 - **Video Worker** (FFmpeg) → consumes jobs from queue, processes videos, updates DB and storage
 - **Database** (PostgreSQL) → users, channels, videos, comments, likes
 - **Object Storage** (S3/MinIO) → video files and thumbnails
-- **Message Queue** (TBD) → video processing job queue
+- **Message Queue** (RabbitMQ) → durable video processing queue with retry and dead-letter handling
 - **Email Service** (SMTP) → account confirmation and password recovery
+
+## Videos
+
+- Uploads are resumable S3 multipart uploads; the browser uploads parts directly to the presigned URLs.
+- Never derive object keys from user-provided filenames. Keys are deterministic from the channel/video identity and media type.
+- A video becomes public only after the worker validates and processes it successfully. Keep lifecycle transitions conditional in PostgreSQL.
+- `VideoLifecycleService` is the only writer of video status transitions. The upload API owns `draft → processing`; the worker owns `processing → ready | error`; the sweeper expires stale drafts and recovers processing jobs.
+- Publish processing jobs only after upload completion and the `draft → processing` transition. Queue retries must remain idempotent.
+- Keep exchanges, queues, retry and dead-letter declarations in `video-processing.topology.ts`. RabbitMQ quorum queue arguments are immutable after declaration.
+- Store originals under `{channelId}/{videoId}/original.{ext}` in `videos` and thumbnails under `{channelId}/{videoId}/thumbnail.jpg` in `thumbnails`.
+- MinIO's S3 `PutBucketCors` operation is unsupported by the pinned server. Browser CORS headers, including exposed `ETag`, are added by the `minio-cors-proxy`; preserve the incoming `Host` header so presigned SigV4 URLs remain valid.
+- The standalone worker starts at `src/worker/main.ts`; its sweeper handles draft expiry, unclaimed jobs and expired processing leases.
+- Public streaming, download, and thumbnail endpoints return short-lived storage URLs; owner operations must enforce channel ownership.
+- Keep error codes stable and messages user-safe; do not expose FFmpeg stderr or raw ffprobe output.
+- E2E tests may override `VIDEO_PROCESSING_QUEUE` to prevent worker races. Storage, worker and media integration tests exercise real MinIO, PostgreSQL and FFmpeg.
 
 ## Docker Networking
 

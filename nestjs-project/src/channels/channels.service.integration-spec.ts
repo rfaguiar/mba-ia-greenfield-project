@@ -9,7 +9,7 @@ import { User } from '../users/entities/user.entity';
 import { ChannelsService } from './channels.service';
 import { Channel } from './entities/channel.entity';
 
-const ALL_ENTITIES = [User, Channel, RefreshToken, VerificationToken];
+import { ALL_ENTITIES } from '../test/all-entities';
 
 describe('ChannelsService (integration)', () => {
   let dataSource: DataSource;
@@ -87,6 +87,39 @@ describe('ChannelsService (integration)', () => {
 
       const channels = await channelRepository.find();
       expect(channels).toHaveLength(2);
+    });
+
+    describe('ownership', () => {
+      it('finds a channel by user id', async () => {
+        const user = await createUser();
+        const channel = await channelsService.createChannel(user.id, user.email);
+
+        await expect(channelsService.findByUserId(user.id)).resolves.toMatchObject({
+          id: channel.id,
+        });
+      });
+
+      it('distinguishes a missing channel from a foreign channel', async () => {
+        const owner = await createUser();
+        const other = await createUser();
+        const channel = await channelsService.createChannel(
+          owner.id,
+          owner.email,
+        );
+
+        await expect(
+          channelsService.assertOwnership(channel.id, other.id),
+        ).rejects.toThrow('You do not have access to this channel');
+        await expect(
+          channelsService.assertOwnership(
+            '00000000-0000-4000-8000-000000000099',
+            owner.id,
+          ),
+        ).rejects.toThrow('Channel not found');
+        await expect(
+          channelsService.assertOwnership(channel.id, owner.id),
+        ).resolves.toBeUndefined();
+      });
     });
   });
 });

@@ -7,7 +7,7 @@ import { createTestDataSource } from '../test/create-test-data-source';
 import { Channel } from './entities/channel.entity';
 import { ChannelsModule } from './channels.module';
 
-const ALL_ENTITIES = [User, Channel, RefreshToken, VerificationToken];
+import { ALL_ENTITIES } from '../test/all-entities';
 
 describe('ChannelsModule', () => {
   it('should compile with TypeOrmModule.forFeature([Channel]) and ChannelsService', async () => {
