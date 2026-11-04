@@ -25,18 +25,19 @@ describe('envValidationSchema — SWAGGER_ENABLED', () => {
   });
 
   describe('envValidationSchema — video infrastructure', () => {
-    it.each(['STORAGE_ACCESS_KEY_ID', 'STORAGE_SECRET_ACCESS_KEY', 'RABBITMQ_URL'])(
-      'requires %s',
-      (key) => {
-        const { error } = envValidationSchema.validate(
-          Object.fromEntries(
-            Object.entries(requiredEnv).filter(([envKey]) => envKey !== key),
-          ),
-          { allowUnknown: true, abortEarly: false },
-        );
-        expect(error?.message).toContain(key);
-      },
-    );
+    it.each([
+      'STORAGE_ACCESS_KEY_ID',
+      'STORAGE_SECRET_ACCESS_KEY',
+      'RABBITMQ_URL',
+    ])('requires %s', (key) => {
+      const { error } = envValidationSchema.validate(
+        Object.fromEntries(
+          Object.entries(requiredEnv).filter(([envKey]) => envKey !== key),
+        ),
+        { allowUnknown: true, abortEarly: false },
+      );
+      expect(error?.message).toContain(key);
+    });
 
     it('rejects multipart sizes below the S3 minimum', () => {
       const { error } = validate({ STORAGE_PART_SIZE_BYTES: '1048576' });

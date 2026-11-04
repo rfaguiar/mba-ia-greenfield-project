@@ -1,11 +1,8 @@
 import { DataSource, Repository } from 'typeorm';
-import { RefreshToken } from '../../auth/entities/refresh-token.entity';
-import { VerificationToken } from '../../auth/entities/verification-token.entity';
 import {
   cleanAllTables,
   createTestDataSource,
 } from '../../test/create-test-data-source';
-import { Channel } from '../../channels/entities/channel.entity';
 import { User } from './user.entity';
 
 import { ALL_ENTITIES } from '../../test/all-entities';

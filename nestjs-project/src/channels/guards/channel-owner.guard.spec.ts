@@ -15,21 +15,22 @@ describe('ChannelOwnerGuard', () => {
     const channels = { assertOwnership: jest.fn() };
     const guard = new ChannelOwnerGuard(channels as unknown as ChannelsService);
 
-    await expect(guard.canActivate(createContext('not-a-uuid'))).rejects.toBeInstanceOf(
-      ChannelNotFoundException,
-    );
+    await expect(
+      guard.canActivate(createContext('not-a-uuid')),
+    ).rejects.toBeInstanceOf(ChannelNotFoundException);
     expect(channels.assertOwnership).not.toHaveBeenCalled();
   });
 
   it('delegates the channel id and authenticated user id', async () => {
-    const channels = { assertOwnership: jest.fn().mockResolvedValue(undefined) };
+    const channels = {
+      assertOwnership: jest.fn().mockResolvedValue(undefined),
+    };
     const guard = new ChannelOwnerGuard(channels as unknown as ChannelsService);
     const channelId = '00000000-0000-4000-8000-000000000001';
 
-    await expect(guard.canActivate(createContext(channelId))).resolves.toBe(true);
-    expect(channels.assertOwnership).toHaveBeenCalledWith(
-      channelId,
-      'user-id',
+    await expect(guard.canActivate(createContext(channelId))).resolves.toBe(
+      true,
     );
+    expect(channels.assertOwnership).toHaveBeenCalledWith(channelId, 'user-id');
   });
 });

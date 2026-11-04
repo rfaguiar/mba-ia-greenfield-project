@@ -78,7 +78,7 @@ describe('VideoSweeperService (integration)', () => {
     );
   });
 
-  afterEach(async () => {
+  afterEach(() => {
     storage.client.destroy();
     storage.presignClient.destroy();
   });

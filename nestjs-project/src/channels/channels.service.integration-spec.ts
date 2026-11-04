@@ -1,6 +1,4 @@
 import { DataSource, Repository } from 'typeorm';
-import { RefreshToken } from '../auth/entities/refresh-token.entity';
-import { VerificationToken } from '../auth/entities/verification-token.entity';
 import {
   cleanAllTables,
   createTestDataSource,
@@ -92,9 +90,14 @@ describe('ChannelsService (integration)', () => {
     describe('ownership', () => {
       it('finds a channel by user id', async () => {
         const user = await createUser();
-        const channel = await channelsService.createChannel(user.id, user.email);
+        const channel = await channelsService.createChannel(
+          user.id,
+          user.email,
+        );
 
-        await expect(channelsService.findByUserId(user.id)).resolves.toMatchObject({
+        await expect(
+          channelsService.findByUserId(user.id),
+        ).resolves.toMatchObject({
           id: channel.id,
         });
       });

@@ -39,6 +39,7 @@ describe('WorkerModule (integration)', () => {
     }).compile();
 
     try {
+      await module.get(DataSource).synchronize();
       await module.init();
       expect(module.get(DataSource).isInitialized).toBe(true);
       expect(module.get(VideoLifecycleService)).toBeInstanceOf(

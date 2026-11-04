@@ -8,7 +8,7 @@ describe('attachmentDisposition', () => {
   });
 
   it('removes path separators, quotes, and control characters', () => {
-    const disposition = attachmentDisposition('..\\folder/a\"\r\nb.mp4');
+    const disposition = attachmentDisposition('..\\folder/a"\r\nb.mp4');
     expect(disposition).toContain('filename="ab.mp4"');
     expect(disposition).toContain("filename*=UTF-8''ab.mp4");
     expect(disposition).not.toContain('\\');

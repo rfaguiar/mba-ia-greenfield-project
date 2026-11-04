@@ -64,13 +64,14 @@ function createService(partSizeBytes = storageSettings.partSizeBytes) {
     presignUploadParts: jest
       .fn()
       .mockImplementation(
-        async (_key: string, _uploadId: string, numbers: number[]) => ({
-          expiresAt: new Date(Date.now() + 3600000),
-          parts: numbers.map((partNumber) => ({
-            partNumber,
-            url: `https://minio/${partNumber}`,
-          })),
-        }),
+        (_key: string, _uploadId: string, numbers: number[]) =>
+          Promise.resolve({
+            expiresAt: new Date(Date.now() + 3600000),
+            parts: numbers.map((partNumber) => ({
+              partNumber,
+              url: `https://minio/${partNumber}`,
+            })),
+          }),
       ),
     listUploadedParts: jest
       .fn()

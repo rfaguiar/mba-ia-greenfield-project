@@ -12,16 +12,13 @@ export function createTestStorage(): {
   const endpoint = process.env.STORAGE_ENDPOINT ?? 'http://minio:9000';
   const settings: ConfigType<typeof storageConfig> = {
     endpoint,
-    publicEndpoint:
-      process.env.STORAGE_PUBLIC_ENDPOINT ?? 'http://minio:9000',
+    publicEndpoint: process.env.STORAGE_PUBLIC_ENDPOINT ?? 'http://minio:9000',
     region: process.env.STORAGE_REGION ?? 'us-east-1',
     accessKeyId: process.env.STORAGE_ACCESS_KEY_ID ?? 'streamtube',
-    secretAccessKey:
-      process.env.STORAGE_SECRET_ACCESS_KEY ?? 'streamtube',
+    secretAccessKey: process.env.STORAGE_SECRET_ACCESS_KEY ?? 'streamtube',
     forcePathStyle: true,
     bucketVideos: process.env.STORAGE_BUCKET_VIDEOS ?? 'videos',
-    bucketThumbnails:
-      process.env.STORAGE_BUCKET_THUMBNAILS ?? 'thumbnails',
+    bucketThumbnails: process.env.STORAGE_BUCKET_THUMBNAILS ?? 'thumbnails',
     presignExpirySeconds: 300,
     maxUploadBytes: 10 * 1024 * 1024 * 1024,
     partSizeBytes: 5 * 1024 * 1024,

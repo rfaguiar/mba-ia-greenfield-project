@@ -21,16 +21,18 @@ export class VideoQueueRecorder implements VideoProcessingQueue {
   readonly retries: Array<{ videoId: string; attempt: number }> = [];
   failNextRequest = false;
 
-  async requestProcessing(videoId: string, attempt?: number): Promise<void> {
+  requestProcessing(videoId: string, attempt?: number): Promise<void> {
     if (this.failNextRequest) {
       this.failNextRequest = false;
       throw new QueueUnavailableException();
     }
     this.requests.push({ videoId, attempt });
+    return Promise.resolve();
   }
 
-  async scheduleRetry(videoId: string, attempt: number): Promise<void> {
+  scheduleRetry(videoId: string, attempt: number): Promise<void> {
     this.retries.push({ videoId, attempt });
+    return Promise.resolve();
   }
 }
 
@@ -109,8 +111,9 @@ export async function createVideoE2eOwner(
   let token = '';
   jest
     .spyOn(mailService, 'sendConfirmationEmail')
-    .mockImplementationOnce(async (_email, _nickname, confirmationToken) => {
+    .mockImplementationOnce((_email, _nickname, confirmationToken) => {
       token = confirmationToken;
+      return Promise.resolve();
     });
 
   await request(app.getHttpServer())

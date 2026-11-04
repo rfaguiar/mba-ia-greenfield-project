@@ -40,7 +40,7 @@ services:
     build:
       context: .
       dockerfile: Dockerfile.dev
-    command: npm run start:worker:dev
+    command: npm run start:worker:runtime
     restart: unless-stopped
     environment:
       STORAGE_ENDPOINT: ${STORAGE_ENDPOINT:-http://minio:9000}

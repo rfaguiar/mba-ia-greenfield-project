@@ -12,9 +12,9 @@ docker compose exec nestjs-api npm install
 docker compose exec nestjs-api npm run migration:run
 ```
 
-The Compose stack includes the NestJS API container, PostgreSQL, Mailpit, MinIO, an S3 CORS proxy, RabbitMQ, and the FFmpeg worker. Start the API listener in watch mode with the command below; it is then available at `http://localhost:3000`. S3 is available at `http://localhost:9000`, MinIO's console at `http://localhost:9001`, RabbitMQ management at `http://localhost:15672`, and Mailpit at `http://localhost:8025`.
+The Compose stack includes the NestJS API container, PostgreSQL, Mailpit, MinIO, an S3 CORS proxy, RabbitMQ, and the FFmpeg worker. `docker compose up -d` starts the worker alongside the backend. Start the API listener in watch mode with the command below; it is then available at `http://localhost:3000`. S3 is available at `http://localhost:9000`, MinIO's console at `http://localhost:9001`, RabbitMQ management at `http://localhost:15672`, and Mailpit at `http://localhost:8025`.
 
-For iterative development, start the API in watch mode with `docker compose exec nestjs-api npm run start:dev`. The worker runs separately through `npm run start:worker:dev`.
+For iterative development, start the API in watch mode with `docker compose exec nestjs-api npm run start:dev`. To run a second worker manually, use `docker compose exec worker npm run start:worker:dev`.
 
 ## Video upload flow
 
@@ -31,10 +31,10 @@ The original filename is metadata only; storage object keys use internal identif
 Run commands inside the API container:
 
 ```bash
-docker compose exec nestjs-api npm test -- --runInBand
-docker compose exec nestjs-api npm run test:e2e
+docker compose exec -e DB_DATABASE=streamtube_test -e DB_NAME=streamtube_test nestjs-api npm test -- --runInBand
+docker compose exec -e DB_DATABASE=streamtube_test -e DB_NAME=streamtube_test nestjs-api npm run test:e2e
 docker compose exec nestjs-api npx tsc --noEmit
-docker compose exec nestjs-api npm run openapi:export
+docker compose exec nestjs-api npm run lint
 ```
 
-The test database and infrastructure services are provided by Docker Compose. Integration and e2e tests must run serially because they share database state.
+Create the dedicated `streamtube_test` database before running the test commands. Integration and E2E tests clear tables in their configured database, so never point `DB_DATABASE` or `DB_NAME` at a development database. Tests must run serially because they share database state. The broker-to-worker integration test also starts the standalone worker process and requires the Compose FFmpeg image.
