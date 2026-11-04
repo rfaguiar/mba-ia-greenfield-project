@@ -4,6 +4,7 @@ import {
   Get,
   HttpCode,
   HttpStatus,
+  InternalServerErrorException,
   Post,
   Query,
 } from '@nestjs/common';
@@ -26,11 +27,15 @@ import { RefreshTokenDto } from './dto/refresh-token.dto';
 import { RegisterDto } from './dto/register.dto';
 import { ResendConfirmationDto } from './dto/resend-confirmation.dto';
 import { ResetPasswordDto } from './dto/reset-password.dto';
+import { ChannelsService } from '../channels/channels.service';
 
 @ApiTags('auth')
 @Controller('auth')
 export class AuthController {
-  constructor(private readonly authService: AuthService) {}
+  constructor(
+    private readonly authService: AuthService,
+    private readonly channelsService: ChannelsService,
+  ) {}
 
   @Public()
   @Post('register')
@@ -258,6 +263,7 @@ export class AuthController {
       properties: {
         sub: { type: 'string', format: 'uuid' },
         email: { type: 'string', format: 'email' },
+        channel_id: { type: 'string', format: 'uuid' },
       },
     },
   })
@@ -266,7 +272,15 @@ export class AuthController {
     description: 'Missing or invalid access token',
     schema: { $ref: getSchemaPath(ApiErrorEnvelope) },
   })
-  me(@CurrentUser() user: JwtPayload): JwtPayload {
-    return user;
+  async me(
+    @CurrentUser() user: JwtPayload,
+  ): Promise<{ sub: string; email: string; channel_id: string }> {
+    const channel = await this.channelsService.findByUserId(user.sub);
+    if (!channel) {
+      throw new InternalServerErrorException(
+        'Authenticated user channel is unavailable',
+      );
+    }
+    return { sub: user.sub, email: user.email, channel_id: channel.id };
   }
 }

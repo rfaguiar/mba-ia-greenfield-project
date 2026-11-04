@@ -27,7 +27,7 @@
   - `npm test` exit 0 with "No test files found, exiting with code 0" (no `onUnhandledRequest` warnings).
   - `tsc --noEmit` exit 0.
 
-### SI-4 — Atualizar .claude/rules/next-frontend-msw-mocks.md
+### SI-4 — Atualizar .github/instructions/next-frontend-msw-mocks.instructions.md
 - **Status:** completed
 - **Tests:** no tests (rule doc only)
 - **Observations:**

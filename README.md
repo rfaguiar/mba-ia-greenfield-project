@@ -37,17 +37,36 @@ Contém os fundamentos visuais do StreamTube — tokens (cores, tipografia, espa
 - Node.js v25+ (para rodar os testes E2E do Playwright no host)
 - npm
 
+## 🤖 Claude Code e GitHub Copilot
+
+O projeto mantém suporte aos dois clientes de IA, com configurações próprias que coexistem no repositório:
+
+- **Claude Code:** `CLAUDE.md`, `nestjs-project/CLAUDE.md` e `.claude/` (skills, agentes, regras e configurações).
+- **GitHub Copilot no VS Code:** `.github/copilot-instructions.md`, `nestjs-project/AGENTS.md`, `.github/instructions/`, `.github/skills/` e `.github/agents/`.
+- **Ambos:** `.mcp.json` configura os servidores PostgreSQL, Context7 e Figma.
+
+Para habilitar o MCP PostgreSQL, defina a URL usando a porta publicada pelo Compose no ambiente que inicia Claude Code ou VS Code. O valor fica no ambiente local e não deve ser salvo no repositório:
+
+```powershell
+$env:STREAMTUBE_POSTGRES_URL = "postgresql://<usuario>:<senha>@localhost:5432/streamtube"
+code .
+```
+
+Substitua os placeholders pelas credenciais locais do PostgreSQL. A conexão do servidor MCP foi validada com uma consulta somente leitura (`SELECT 1`).
+
+O Context7 usa o endpoint HTTP oficial. O servidor Figma está disponível quando o serviço local do Figma estiver ativo em `127.0.0.1:3845`.
+
 ## 🏗️ Arquitetura
 
 O projeto é um monorepo baseado em containers Docker. Cada subprojeto sobe sua própria stack via `docker compose`.
 
 - **Frontend** (Next.js 16, App Router + React Server Components) — interface da plataforma. Segue o **modelo BFF**: o navegador nunca chama a API NestJS diretamente; todo tráfego passa por Route Handlers same-origin em `app/api/**`, que fazem proxy server-side para a API.
 - **API** (NestJS 11) — regras de negócio, autenticação (JWT + refresh token rotation), envio de e-mails e acesso ao banco.
-- **Database** (PostgreSQL 17) — usuários, canais e tokens de autenticação.
+- **Database** (PostgreSQL 17) — usuários, canais, tokens de autenticação e vídeos.
 - **Email Service** (Mailpit) — captura os e-mails transacionais (confirmação de conta e recuperação de senha) em uma UI local.
-- **Video Worker** (FFmpeg) — processamento de vídeos *(planejado — Fase 03)*.
-- **Object Storage** (S3/MinIO) — arquivos de vídeo e thumbnails *(planejado — Fase 03)*.
-- **Message Queue** — fila de processamento de vídeos *(planejado — Fase 03)*.
+- **Video Worker** (FFmpeg/FFprobe) — validação e processamento assíncrono de vídeos.
+- **Object Storage** (S3/MinIO) — uploads multipart, vídeos processados e thumbnails.
+- **Message Queue** (RabbitMQ) — fila durável com retry e dead-letter para processamento.
 
 O diagrama de arquitetura completo (C4) está em `docs/diagrams/software-arch.mermaid`.
 
@@ -124,7 +143,7 @@ Sufixos: `*.test.ts(x)` (unitário), `*.integration.test.ts(x)` (Route Handlers 
 
 ## ✅ Funcionalidades implementadas
 
-**Fase 01 — Configuração base** e **Fase 02 — Autenticação** estão concluídas (backend + frontend).
+**Fases 01 — Configuração base, 02 — Autenticação e 03 — Upload e processamento de vídeos** estão concluídas no backend.
 
 ### Autenticação (Fase 02)
 
@@ -150,6 +169,24 @@ Telas e Route Handlers BFF (`next-frontend`):
 - `app/api/auth/{signup,login,logout,forgot-password}` — proxy same-origin para a API.
 
 Segurança: senhas com **Argon2**, **JWT** com `JwtAuthGuard` global (opt-out via `@Public()`), **rotação de refresh token** com detecção de reuso, **rate limiting** (`ThrottlerGuard`) nos endpoints de auth, e sessão no navegador via **iron-session** (cookies HTTP-only).
+
+### Vídeos (Fase 03)
+
+O backend oferece upload multipart retomável direto para S3/MinIO, validação do tamanho e das partes no servidor, processamento em worker com FFmpeg e publicação de metadados e URLs temporárias somente após a conclusão do processamento. As transições de estado são condicionais no PostgreSQL; o worker inclui retry, recuperação de jobs e encerramento gracioso.
+
+| Método & Rota | Descrição |
+|---------------|-----------|
+| `POST /channels/:channelId/videos` | Inicia um upload multipart (requer autenticação e posse do canal) |
+| `GET /channels/:channelId/videos/:videoId/uploads/parts` | Retoma o upload e obtém URLs das partes pendentes |
+| `POST /channels/:channelId/videos/:videoId/uploads/complete` | Valida e finaliza o upload, enfileirando o processamento |
+| `POST /channels/:channelId/videos/:videoId/uploads/abort` | Aborta um upload em rascunho |
+| `GET /channels/:channelId/videos/:videoId` | Consulta o estado detalhado do vídeo do proprietário |
+| `GET /videos/:id` | Consulta metadados públicos de um vídeo pronto |
+| `GET /videos/:id/stream` | Obtém URL temporária de streaming |
+| `GET /videos/:id/download` | Obtém URL temporária para download com nome seguro |
+| `GET /videos/:id/thumbnail` | Obtém URL temporária da thumbnail |
+
+Para desenvolvimento local, o Compose disponibiliza a API (`:3000`), PostgreSQL (`:5432`), MinIO (`:9000`, console `:9001`), RabbitMQ (`:5672`, management `:15672`) e Mailpit (`:8025`). O endpoint S3 público em `:9000` passa por um proxy CORS que expõe `ETag` para uploads no navegador; o tráfego interno da API e do worker acessa MinIO diretamente. Configure `.env` com base em `.env.example`, aplique as migrations (`docker compose exec nestjs-api npm run migration:run`) e acompanhe o processamento nos logs de `worker`.
 
 ## 🛠️ Estrutura do Projeto
 
@@ -183,7 +220,13 @@ green-field-ia-project/
 │   ├── tests/                           # E2E (Playwright)
 │   ├── compose.yaml                     # Docker Compose (dev server)
 │   └── Dockerfile.dev
-├── CLAUDE.md                            # Instruções para IA
+├── .github/
+│   ├── copilot-instructions.md          # Instruções gerais do Copilot
+│   ├── instructions/                    # Regras condicionais por arquivos
+│   ├── agents/                          # Agentes especialistas
+│   └── skills/                          # Skills e recursos do workflow
+├── .mcp.json                            # Servidores MCP para o Copilot
+├── nestjs-project/AGENTS.md             # Instruções específicas do backend
 ├── FC Tube.fig                          # Design system do projeto (Figma)
 ├── whiteboard.png                       # Quadro branco do projeto
 └── README.md
@@ -195,7 +238,7 @@ green-field-ia-project/
 |------|-----------|--------|
 | **01** | Configuração Base do Projeto | ✅ Concluída |
 | **02** | Cadastro, Login e Gerenciamento de Conta | ✅ Concluída |
-| **03** | Upload e Processamento de Vídeos | ⏳ Planejada |
+| **03** | Upload e Processamento de Vídeos | ✅ Concluída (backend) |
 | **04** | Gerenciamento de Vídeos e Canal | ⏳ Planejada |
 | **05** | Página de Visualização do Vídeo | ⏳ Planejada |
 | **06** | Interações Sociais (Likes, Comentários, Inscrições) | ⏳ Planejada |
@@ -210,6 +253,7 @@ Detalhes completos em `docs/project-plan.md`.
 | Frontend | Next.js 16, React 19, TypeScript, Tailwind CSS 4, shadcn/ui, React Hook Form + Zod, iron-session, openapi-fetch |
 | Backend | NestJS 11, TypeScript, TypeORM, JWT, Argon2, Mailer (Handlebars) |
 | Banco de Dados | PostgreSQL 17 |
+| Vídeos | S3/MinIO, RabbitMQ, FFmpeg/FFprobe |
 | E-mail (dev) | Mailpit |
 | Containerização | Docker, Docker Compose |
 | Testes | Jest, Supertest (backend); Vitest, MSW, Playwright (frontend) |

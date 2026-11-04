@@ -1,6 +1,10 @@
 import { QueryFailedError } from 'typeorm';
 import { ChannelsService } from './channels.service';
 import { Channel } from './entities/channel.entity';
+import {
+  ChannelAccessDeniedException,
+  ChannelNotFoundException,
+} from '../common/exceptions/domain.exception';
 
 function makeManager(overrides: Record<string, jest.Mock> = {}): any {
   return {
@@ -24,10 +28,11 @@ function makeChannel(nickname: string): Channel {
 }
 
 function makeUniqueError(): QueryFailedError {
-  const err = new QueryFailedError('INSERT', [], new Error()) as any;
-  err.code = '23505';
-  err.detail = 'Key (nickname)=(abc) already exists.';
-  return err;
+  const driverError = Object.assign(new Error(), {
+    code: '23505',
+    detail: 'Key (nickname)=(abc) already exists.',
+  });
+  return new QueryFailedError('INSERT', [], driverError);
 }
 
 function makeDataSource(manager: any): any {
@@ -37,6 +42,45 @@ function makeDataSource(manager: any): any {
 }
 
 describe('ChannelsService', () => {
+  describe('assertOwnership', () => {
+    it('throws when the channel does not exist', async () => {
+      const repository = { findOneBy: jest.fn().mockResolvedValue(null) };
+      const service = new ChannelsService({
+        getRepository: () => repository,
+      } as any);
+
+      await expect(
+        service.assertOwnership('missing', 'user-id'),
+      ).rejects.toBeInstanceOf(ChannelNotFoundException);
+    });
+
+    it('throws when the caller does not own the channel', async () => {
+      const repository = {
+        findOneBy: jest.fn().mockResolvedValue(makeChannel('other')),
+      };
+      const service = new ChannelsService({
+        getRepository: () => repository,
+      } as any);
+
+      await expect(
+        service.assertOwnership('channel-id', 'foreign-user'),
+      ).rejects.toBeInstanceOf(ChannelAccessDeniedException);
+    });
+
+    it('resolves when the caller owns the channel', async () => {
+      const repository = {
+        findOneBy: jest.fn().mockResolvedValue(makeChannel('owned')),
+      };
+      const service = new ChannelsService({
+        getRepository: () => repository,
+      } as any);
+
+      await expect(
+        service.assertOwnership('channel-id', 'user-id'),
+      ).resolves.toBeUndefined();
+    });
+  });
+
   describe('createChannel', () => {
     it('derives nickname from email prefix and saves when no collision', async () => {
       const channel = makeChannel('test');

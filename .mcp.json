@@ -5,8 +5,16 @@
       "args": [
         "-y",
         "@modelcontextprotocol/server-postgres",
-        "postgresql://streamtube:streamtube@localhost/streamtube"
+        "${STREAMTUBE_POSTGRES_URL}"
       ]
+    },
+    "context7": {
+      "type": "http",
+      "url": "https://mcp.context7.com/mcp"
+    },
+    "figma": {
+      "type": "http",
+      "url": "http://127.0.0.1:3845/mcp"
     }
   }
 }
